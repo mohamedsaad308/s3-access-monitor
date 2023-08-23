@@ -1,13 +1,16 @@
 import boto3
 import json
 
+
 # Create an S3 client
-s3_client = boto3.client("s3")
+def create_client(access_key, secret_key):
+    return boto3.client("s3", aws_access_key_id=access_key, aws_secret_access_key=secret_key)
 
 
 # Function to categorize buckets as private or public based on Public Access Block settings
-def categorize_buckets():
+def categorize_buckets(access_key, secret_key):
     # Get a list of all buckets
+    s3_client = create_client(access_key, secret_key)
     buckets = s3_client.list_buckets()["Buckets"]
 
     # Initialize lists to store private and public buckets
@@ -60,7 +63,7 @@ def categorize_buckets():
 
 
 # Function to list objects in a bucket
-def list_objs(bucket: str) -> list:
+def list_objs(bucket: str, s3_client) -> list:
     response = s3_client.list_objects_v2(Bucket=bucket)
     objects = []
     while "Contents" in response:
@@ -98,7 +101,7 @@ def is_bucket_public(bucket):
     return False
 
 
-def is_object_public(bucket, object_name):
+def is_object_public(bucket, object_name, s3_client):
     try:
         # Check if the bucket that contains the object is publically accessible by ACL
         if bucket["acl_is_public"]:
@@ -152,23 +155,23 @@ def get_object_url(bucket, obj):
     return f"https://{bucket}.s3.amazonaws.com/{obj}"
 
 
-# Function to categorize objects in a bucket
-def categorize_objects():
-    all_buckets = categorize_buckets()
+# Function to categorize objects in all  buckets
+def categorize_objects(all_buckets, access_key, secret_key):
+    s3_client = create_client(access_key, secret_key)
     private_buckets, public_buckets = all_buckets["private_buckets"], all_buckets["public_buckets"]
     public_objects = []
     private_objects = []
 
     for bucket in public_buckets:
         if is_bucket_public(bucket):
-            for obj in list_objs(bucket["bucket_name"]):
+            for obj in list_objs(bucket["bucket_name"], s3_client):
                 public_objects.append(
                     {"bucket": bucket["bucket_name"], "key": obj, "url": get_object_url(bucket["bucket_name"], obj)}
                 )
 
         else:
-            for obj in list_objs(bucket["bucket_name"]):
-                if is_object_public(bucket, obj):
+            for obj in list_objs(bucket["bucket_name"], s3_client):
+                if is_object_public(bucket, obj, s3_client):
                     public_objects.append(
                         {
                             "bucket": bucket["bucket_name"],
@@ -185,8 +188,10 @@ def categorize_objects():
                         }
                     )
     for bucket in private_buckets:
-        for obj in list_objs(bucket["bucket_name"]):
-            private_objects.append({"bucket": bucket, "key": obj, "url": get_object_url(bucket["bucket_name"], obj)})
+        for obj in list_objs(bucket["bucket_name"], s3_client):
+            private_objects.append(
+                {"bucket": bucket["bucket_name"], "key": obj, "url": get_object_url(bucket["bucket_name"], obj)}
+            )
 
     return {
         "public_objects": public_objects,

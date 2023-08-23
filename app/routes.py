@@ -32,7 +32,9 @@ def validate_aws_credentials():
 @app.route("/api/buckets")
 def get_buckets():
     try:
-        return jsonify(categorize_buckets())
+        access_key = request.headers.get("access_key")
+        secret_key = request.headers.get("secret_key")
+        return jsonify(categorize_buckets(access_key, secret_key))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -41,13 +43,9 @@ def get_buckets():
 @app.route("/api/categorize-objects", methods=["GET"])
 def get_categorized_objects():
     try:
-        return jsonify(categorize_objects())
+        access_key = request.headers.get("access_key")
+        secret_key = request.headers.get("secret_key")
+        all_buckets = categorize_buckets(access_key, secret_key)
+        return jsonify(categorize_objects(all_buckets, access_key, secret_key))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/permissions")
-def get_permissions():
-    # Logic to fetch and return access permissions of all objects
-    permissions = []
-    return jsonify(permissions)
