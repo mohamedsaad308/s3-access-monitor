@@ -9,79 +9,67 @@ s3_client = boto3.client("s3")
 
 # Function to categorize buckets as private or public based on Public Access Block settings
 def categorize_buckets():
-    try:
-        # Get a list of all buckets
-        buckets = s3_client.list_buckets()["Buckets"]
+    # Get a list of all buckets
+    buckets = s3_client.list_buckets()["Buckets"]
 
-        # Initialize lists to store private and public buckets
-        private_buckets = []
-        public_buckets = []
-        private_buckets_count, publice_buckets_count = 0, 0
-        # Iterate through buckets and categorize based on Public Access Block settings
-        for bucket in buckets:
-            bucket_details = {}
-            bucket_details["bucket_name"] = bucket["Name"]
-            bucket_acl = s3_client.get_bucket_acl(Bucket=bucket["Name"])
-            bucket_details["bucket_acl"] = bucket_acl["Grants"]
-            bucket_details["bucket_owner"] = bucket_acl["Owner"]["DisplayName"]
-            bucket_details["creation_date"] = bucket["CreationDate"].strftime("%Y-%m-%d %H:%M")
+    # Initialize lists to store private and public buckets
+    private_buckets = []
+    public_buckets = []
+    private_buckets_count, publice_buckets_count = 0, 0
+    # Iterate through buckets and categorize based on Public Access Block settings
+    for bucket in buckets:
+        bucket_details = {}
+        bucket_details["bucket_name"] = bucket["Name"]
+        bucket_acl = s3_client.get_bucket_acl(Bucket=bucket["Name"])
+        public_access_block = s3_client.get_public_access_block(Bucket=bucket["Name"])
+        bucket_details["bucket_acl"] = bucket_acl["Grants"]
+        bucket_details["bucket_owner"] = bucket_acl["Owner"]["DisplayName"]
+        bucket_details["creation_date"] = bucket["CreationDate"].strftime("%Y-%m-%d %H:%M")
 
-            # Check if there is a grant allowing public read access
-            for grant in bucket_details["bucket_acl"]:
-                grantee = grant.get("Grantee", {})
-                uri = grantee.get("URI", "")
+        # Check if there is a grant allowing public read access
+        for grant in bucket_details["bucket_acl"]:
+            grantee = grant.get("Grantee", {})
+            uri = grantee.get("URI", "")
 
-                # Check if the grantee is the "AllUsers" group with READ permission
-                if uri == "http://acs.amazonaws.com/groups/global/AllUsers" and grant.get("Permission") == "READ":
-                    bucket_details["acl_is_public"] = True
-                else:
-                    bucket_details["acl_is_public"] = False
-
-            try:
-                bucket_policy_response = s3_client.get_bucket_policy(Bucket=bucket["Name"])
-                bucket_policy = json.loads(bucket_policy_response["Policy"])
-                bucket_details["bucket_policy"] = bucket_policy
-            except s3_client.exceptions.from_code("NoSuchBucketPolicy"):
-                print(f"Error checking if bucket {bucket['Name']} has a policy!")
-                bucket_details["bucket_policy"] = None
-
-            # Check the bucket's Public Access Block settings
-            public_access_block = s3_client.get_public_access_block(Bucket=bucket["Name"])
-            if all(public_access_block["PublicAccessBlockConfiguration"].values()):
-                private_buckets.append(bucket_details)
-                private_buckets_count += 1
+            # Check if the grantee is the "AllUsers" group with READ permission
+            if uri == "http://acs.amazonaws.com/groups/global/AllUsers" and grant.get("Permission") == "READ":
+                bucket_details["acl_is_public"] = True
             else:
-                public_buckets.append(bucket_details)
-                publice_buckets_count += 1
+                bucket_details["acl_is_public"] = False
 
-        return {
-            "private_buckets": private_buckets,
-            "public_buckets": public_buckets,
-            "publice_buckets_count": publice_buckets_count,
-            "private_buckets_count": private_buckets_count,
-        }
-    except Exception as e:
-        raise e
+        try:
+            bucket_policy_response = s3_client.get_bucket_policy(Bucket=bucket["Name"])
+            bucket_policy = json.loads(bucket_policy_response["Policy"])
+            bucket_details["bucket_policy"] = bucket_policy
+        except s3_client.exceptions.from_code("NoSuchBucketPolicy"):
+            print(f"Error checking if bucket {bucket['Name']} has a policy!")
+            bucket_details["bucket_policy"] = None
 
+        # Check the bucket's Public Access Block settings
+        if all(public_access_block["PublicAccessBlockConfiguration"].values()):
+            private_buckets.append(bucket_details)
+            private_buckets_count += 1
+        else:
+            public_buckets.append(bucket_details)
+            publice_buckets_count += 1
 
-# View to retrieve and categorize buckets
-@app.route("/api/buckets")
-def get_buckets():
-    try:
-        return jsonify(categorize_buckets())
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return {
+        "private_buckets": private_buckets,
+        "public_buckets": public_buckets,
+        "publice_buckets_count": publice_buckets_count,
+        "private_buckets_count": private_buckets_count,
+    }
 
 
 # Function to list objects in a bucket
 def list_objs(bucket: str) -> list:
-    response = s3_client.list_objects_v2(Bucket=bucket["bucket_name"])
+    response = s3_client.list_objects_v2(Bucket=bucket)
     objects = []
     while "Contents" in response:
         for obj_dict in response["Contents"]:
             objects.append(obj_dict["Key"])
         if response["IsTruncated"]:
-            response = s3_client.list_objects_v2(Bucket=bucket["bucket_name"], StartAfter=objects[-1])
+            response = s3_client.list_objects_v2(Bucket=bucket, StartAfter=objects[-1])
         else:
             break
     return objects
@@ -163,7 +151,7 @@ def is_object_public(bucket, object_name):
 
 
 def get_object_url(bucket, obj):
-    return f"https://{bucket['bucket_name']}.s3.amazonaws.com/{obj}"
+    return f"https://{bucket}.s3.amazonaws.com/{obj}"
 
 
 # Function to categorize objects in a bucket
@@ -175,19 +163,19 @@ def categorize_objects():
 
     for bucket in public_buckets:
         if is_bucket_public(bucket):
-            for obj in list_objs(bucket):
+            for obj in list_objs(bucket["bucket_name"]):
                 public_objects.append(
-                    {"bucket": bucket["bucket_name"], "key": obj, "url": get_object_url(bucket, obj)}
+                    {"bucket": bucket["bucket_name"], "key": obj, "url": get_object_url(bucket["bucket_name"], obj)}
                 )
 
         else:
-            for obj in list_objs(bucket):
+            for obj in list_objs(bucket["bucket_name"]):
                 if is_object_public(bucket, obj):
                     public_objects.append(
                         {
                             "bucket": bucket["bucket_name"],
                             "key": obj,
-                            "url": get_object_url(bucket, obj),
+                            "url": get_object_url(bucket["bucket_name"], obj),
                         }
                     )
                 else:
@@ -195,12 +183,12 @@ def categorize_objects():
                         {
                             "bucket": bucket["bucket_name"],
                             "key": obj,
-                            "url": get_object_url(bucket, obj),
+                            "url": get_object_url(bucket["bucket_name"], obj),
                         }
                     )
     for bucket in private_buckets:
-        for obj in list_objs(bucket):
-            private_objects.append({"bucket": bucket, "key": obj, "url": get_object_url(bucket, obj)})
+        for obj in list_objs(bucket["bucket_name"]):
+            private_objects.append({"bucket": bucket, "key": obj, "url": get_object_url(bucket["bucket_name"], obj)})
 
     return {
         "public_objects": public_objects,
@@ -208,6 +196,15 @@ def categorize_objects():
         "public_objects_count": len(public_objects),
         "private_objects_count": len(private_objects),
     }
+
+
+# View to retrieve and categorize buckets
+@app.route("/api/buckets")
+def get_buckets():
+    try:
+        return jsonify(categorize_buckets())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # View to retrieve and categorize objects in buckets
