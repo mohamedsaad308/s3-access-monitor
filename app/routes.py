@@ -1,6 +1,6 @@
 from flask import jsonify, request
 from app import app
-from utils import categorize_buckets, categorize_objects
+from app.utils import categorize_buckets, categorize_objects
 import boto3
 
 
@@ -15,10 +15,8 @@ def validate_aws_credentials():
     try:
         # Initialize Boto3 client with provided credentials
         client = boto3.client("sts", aws_access_key_id=access_key, aws_secret_access_key=secret_key)
-
         # Use get_caller_identity to validate the credentials
         response = client.get_caller_identity()
-
         # Check if the response contains valid information
         if "Account" in response and "UserId" in response and "Arn" in response:
             return jsonify({"valid": True, "message": "Credentials are valid.", "caller_identity": response})
