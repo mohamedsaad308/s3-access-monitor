@@ -9,7 +9,6 @@ function ListObjectsPage() {
   const [showPrivate, setShowPrivate] = useState(true);
 
   useEffect(() => {
-    console.log("Here");
     getObjects(localStorage.getItem("accessKeyId"), localStorage.getItem("secretAccessKey"))
       .then((res) => res.json())
       .then((result) => {

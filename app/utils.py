@@ -165,7 +165,7 @@ def get_object_url(bucket, obj):
 # Function to categorize objects in all  buckets
 def categorize_objects(all_buckets, access_key, secret_key):
     s3_client = create_client(access_key, secret_key)
-    private_buckets, public_buckets = all_buckets["private_buckets"], all_buckets["public_buckets"]
+    private_buckets, public_buckets = all_buckets.get("private_buckets", []), all_buckets.get("public_buckets", [])
     public_objects = []
     private_objects = []
 
@@ -194,3 +194,43 @@ def categorize_objects(all_buckets, access_key, secret_key):
         "public_objects_count": len(public_objects),
         "private_objects_count": len(private_objects),
     }
+
+
+def categorize_bucket_objects(bucket, access_key, secret_key):
+    s3_client = create_client(access_key, secret_key)
+    bucket_details = {"bucket_name": bucket}
+    bucket_acl = s3_client.get_bucket_acl(Bucket=bucket)
+    public_access_block = s3_client.get_public_access_block(Bucket=bucket)
+    try:
+        bucket_policy_response = s3_client.get_bucket_policy(Bucket=bucket)
+        bucket_policy = json.loads(bucket_policy_response["Policy"])
+        bucket_details["bucket_policy"] = bucket_policy
+    except s3_client.exceptions.from_code("NoSuchBucketPolicy"):
+        print(f"Error checking if bucket {bucket} has a policy!")
+        bucket_details["bucket_policy"] = None
+    bucket_details["bucket_acl"] = bucket_acl["Grants"]
+    private_buckets = []
+    public_buckets = []
+    # Check if there is a grant allowing public read access
+    for grant in bucket_details["bucket_acl"]:
+        grantee = grant.get("Grantee", {})
+        uri = grantee.get("URI", "")
+
+        # Check if the grantee is the "AllUsers" group with READ permission
+        if uri == "http://acs.amazonaws.com/groups/global/AllUsers" and grant.get("Permission") == "READ":
+            bucket_details["acl_is_public"] = True
+        else:
+            bucket_details["acl_is_public"] = False
+        # Check the bucket's Public Access Block settings
+        if all(public_access_block["PublicAccessBlockConfiguration"].values()):
+            private_buckets.append(bucket_details)
+        else:
+            public_buckets.append(bucket_details)
+        return categorize_objects(
+            {
+                "private_buckets": private_buckets,
+                "public_buckets": public_buckets,
+            },
+            access_key,
+            secret_key,
+        )
