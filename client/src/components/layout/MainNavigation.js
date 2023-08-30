@@ -25,7 +25,24 @@ function MainNavigation() {
           ) : (
             ""
           )}
-
+          {localStorage.getItem("secretAccessKey") ? (
+            <li className="nav-item ">
+              <Link className="nav-link" to="/buckets">
+                Buckets
+              </Link>
+            </li>
+          ) : (
+            ""
+          )}
+          {localStorage.getItem("secretAccessKey") ? (
+            <li className="nav-item ">
+              <Link className="nav-link" to="/objects">
+                Objects
+              </Link>
+            </li>
+          ) : (
+            ""
+          )}
           {!localStorage.getItem("secretAccessKey") ? (
             <li className="nav-item ">
               <Link className="nav-link" to="/login">

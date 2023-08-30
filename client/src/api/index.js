@@ -21,3 +21,7 @@ export const loginUser = (cred) => {
 export const getBuckets = (access_key, secret_key) => {
   return fetch("http://127.0.0.1:5000/api/buckets", createRequest(access_key, secret_key));
 };
+
+export const getObjects = (access_key, secret_key) => {
+  return fetch("http://127.0.0.1:5000/api/categorize-objects", createRequest(access_key, secret_key));
+};

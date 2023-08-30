@@ -14,7 +14,7 @@ function Home() {
               <Link to="/buckets" className="btn btn-primary">
                 Show all bucket information
               </Link>
-              <Link to="/objects" className="btn btn-secondary mt-2">
+              <Link to="/objects" className="btn btn-secondary ml-2">
                 Show all objects information
               </Link>
             </div>
