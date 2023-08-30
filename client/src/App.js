@@ -7,6 +7,7 @@ import Home from "./components/Home";
 import Login from "./components/Login";
 import ListBucketsPage from "./pages/AllBucketsPage";
 import ListObjectsPage from "./pages/AllObjectsPage";
+import BucketObjectsPage from "./pages/BucketObjectsPage";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/login" element={<Login />} exact />
         <Route path="/buckets" element={<ListBucketsPage />} exact />
         <Route path="/objects" element={<ListObjectsPage />} exact />
+        <Route path="/buckets/:bucketName/objects" element={<BucketObjectsPage />} exact />
       </Routes>
     </Layout>
   );

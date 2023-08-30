@@ -1,6 +1,7 @@
 import React from "react";
-
+import { Link } from "react-router-dom";
 function ListBuckets({ buckets, permissionStatus }) {
+  if (!buckets.length) return <p>Yoh have no buckets under this section!</p>;
   return (
     <div>
       <table className="table table-bordered">
@@ -15,7 +16,10 @@ function ListBuckets({ buckets, permissionStatus }) {
         <tbody>
           {buckets.map((bucket, index) => (
             <tr key={index}>
-              <td>{bucket.bucket_name}</td>
+              <td>
+                {" "}
+                <Link to={`/buckets/${bucket.bucket_name}/objects`}>{bucket.bucket_name}</Link>
+              </td>
               <td>{bucket.bucket_owner}</td>
               <td>{permissionStatus}</td>
               <td>{bucket.creation_date}</td>
