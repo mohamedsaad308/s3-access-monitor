@@ -52,9 +52,9 @@ def get_categorized_objects():
 # View to retrieve and categorize objects in all buckets
 @app.route("/api/buckets/<bucket_name>/objects", methods=["GET"])
 def get_bucket_objects(bucket_name):
-    # try:
-    access_key = request.headers.get("access_key")
-    secret_key = request.headers.get("secret_key")
-    return jsonify(categorize_bucket_objects(bucket_name, access_key, secret_key))
-    # except Exception as e:
-    #     return jsonify({"error": str(e)}), 500
+    try:
+        access_key = request.headers.get("access_key")
+        secret_key = request.headers.get("secret_key")
+        return jsonify(categorize_bucket_objects(bucket_name, access_key, secret_key))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
