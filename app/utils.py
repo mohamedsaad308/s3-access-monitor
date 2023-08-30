@@ -68,9 +68,16 @@ def list_objs(bucket: str, s3_client) -> list:
     objects = []
     while "Contents" in response:
         for obj_dict in response["Contents"]:
-            objects.append(obj_dict["Key"])
+            objects.append(
+                {
+                    "bucket": bucket,
+                    "key": obj_dict["Key"],
+                    "size": obj_dict["Size"],
+                    "last_modified": obj_dict["LastModified"].strftime("%Y-%m-%d %H:%M"),
+                }
+            )
         if response["IsTruncated"]:
-            response = s3_client.list_objects_v2(Bucket=bucket, StartAfter=objects[-1])
+            response = s3_client.list_objects_v2(Bucket=bucket, StartAfter=objects[-1]["key"])
         else:
             break
     return objects
@@ -165,33 +172,21 @@ def categorize_objects(all_buckets, access_key, secret_key):
     for bucket in public_buckets:
         if is_bucket_public(bucket):
             for obj in list_objs(bucket["bucket_name"], s3_client):
-                public_objects.append(
-                    {"bucket": bucket["bucket_name"], "key": obj, "url": get_object_url(bucket["bucket_name"], obj)}
-                )
+                obj["url"] = get_object_url(bucket["bucket_name"], obj["key"])
+                public_objects.append(obj)
 
         else:
             for obj in list_objs(bucket["bucket_name"], s3_client):
-                if is_object_public(bucket, obj, s3_client):
-                    public_objects.append(
-                        {
-                            "bucket": bucket["bucket_name"],
-                            "key": obj,
-                            "url": get_object_url(bucket["bucket_name"], obj),
-                        }
-                    )
+                if is_object_public(bucket, obj["key"], s3_client):
+                    obj["url"] = get_object_url(bucket["bucket_name"], obj["key"])
+                    public_objects.append(obj)
                 else:
-                    private_objects.append(
-                        {
-                            "bucket": bucket["bucket_name"],
-                            "key": obj,
-                            "url": get_object_url(bucket["bucket_name"], obj),
-                        }
-                    )
+                    obj["url"] = get_object_url(bucket["bucket_name"], obj["key"])
+                    private_objects.append(obj)
     for bucket in private_buckets:
         for obj in list_objs(bucket["bucket_name"], s3_client):
-            private_objects.append(
-                {"bucket": bucket["bucket_name"], "key": obj, "url": get_object_url(bucket["bucket_name"], obj)}
-            )
+            obj["url"] = get_object_url(bucket["bucket_name"], obj["key"])
+            private_objects.append(obj)
 
     return {
         "public_objects": public_objects,
