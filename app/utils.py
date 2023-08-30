@@ -57,7 +57,7 @@ def categorize_buckets(access_key, secret_key):
     return {
         "private_buckets": private_buckets,
         "public_buckets": public_buckets,
-        "publice_buckets_count": publice_buckets_count,
+        "public_buckets_count": publice_buckets_count,
         "private_buckets_count": private_buckets_count,
     }
 

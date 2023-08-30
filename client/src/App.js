@@ -5,6 +5,7 @@ import "./App.css";
 import Layout from "./components/layout/Layout";
 import Home from "./components/Home";
 import Login from "./components/Login";
+import ListBucketsPage from "./pages/AllBucketsPage";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} exact />
         <Route path="/login" element={<Login />} exact />
+        <Route path="/buckets" element={<ListBucketsPage />} exact />
       </Routes>
     </Layout>
   );
