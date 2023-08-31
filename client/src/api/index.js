@@ -1,7 +1,7 @@
 const createRequest = (access_key, secret_key) => {
   const myHeaders = new Headers();
-  myHeaders.append("access_key", access_key);
-  myHeaders.append("secret_access", secret_key);
+  myHeaders.append("access-key", access_key);
+  myHeaders.append("secret-access", secret_key);
   return {
     method: "GET",
     headers: myHeaders,

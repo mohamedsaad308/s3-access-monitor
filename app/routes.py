@@ -9,8 +9,8 @@ import boto3
 def validate_aws_credentials():
     # Get access key and secret key from the request JSON
     data = request.get_json()
-    access_key = data.get("access_key")
-    secret_key = data.get("secret_key")
+    access_key = data.get("access-key")
+    secret_key = data.get("secret-key")
 
     try:
         # Initialize Boto3 client with provided credentials
@@ -30,8 +30,9 @@ def validate_aws_credentials():
 @app.route("/api/buckets")
 def get_buckets():
     try:
-        access_key = request.headers.get("access_key")
-        secret_key = request.headers.get("secret_key")
+        access_key = request.headers.get("access-key")
+        secret_key = request.headers.get("secret-key")
+        print(request.headers)
         return jsonify(categorize_buckets(access_key, secret_key))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -41,8 +42,8 @@ def get_buckets():
 @app.route("/api/categorize-objects", methods=["GET"])
 def get_categorized_objects():
     try:
-        access_key = request.headers.get("access_key")
-        secret_key = request.headers.get("secret_key")
+        access_key = request.headers.get("access-key")
+        secret_key = request.headers.get("secret-key")
         all_buckets = categorize_buckets(access_key, secret_key)
         return jsonify(categorize_objects(all_buckets, access_key, secret_key))
     except Exception as e:
@@ -53,8 +54,8 @@ def get_categorized_objects():
 @app.route("/api/buckets/<bucket_name>/objects", methods=["GET"])
 def get_bucket_objects(bucket_name):
     try:
-        access_key = request.headers.get("access_key")
-        secret_key = request.headers.get("secret_key")
+        access_key = request.headers.get("access-key")
+        secret_key = request.headers.get("secret-key")
         return jsonify(categorize_bucket_objects(bucket_name, access_key, secret_key))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
