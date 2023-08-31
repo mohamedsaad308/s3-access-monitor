@@ -39,7 +39,7 @@ def get_buckets():
 
 
 # View to retrieve and categorize objects in all buckets
-@app.route("/api/categorize-objects", methods=["GET"])
+@app.route("/api/objects", methods=["GET"])
 def get_categorized_objects():
     try:
         access_key = request.headers.get("access-key")
