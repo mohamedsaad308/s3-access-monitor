@@ -9,9 +9,8 @@ import boto3
 def validate_aws_credentials():
     # Get access key and secret key from the request JSON
     data = request.get_json()
-    access_key = data.get("access-key")
-    secret_key = data.get("secret-key")
-
+    access_key = data.get("access_key")
+    secret_key = data.get("secret_key")
     try:
         # Initialize Boto3 client with provided credentials
         client = boto3.client("sts", aws_access_key_id=access_key, aws_secret_access_key=secret_key)
