@@ -28,10 +28,10 @@ function ListObjectsPage() {
         file.
       </p>
       <button onClick={() => setShowPublic(!showPublic)} className="mr-2">
-        {showPublic ? "Hide Public Buckets" : "Show Public Buckets"}
+        {showPublic ? "Hide Public Objects" : "Show Public Objects"}
       </button>
       <button onClick={() => setShowPrivate(!showPrivate)}>
-        {showPrivate ? "Hide Private Buckets" : "Show Private Buckets"}
+        {showPrivate ? "Hide Private Objects" : "Show Private Objects"}
       </button>
       {showPublic && (
         <div className="mt-2">
