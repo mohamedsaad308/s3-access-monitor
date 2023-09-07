@@ -22,9 +22,8 @@ def categorize_buckets(access_key, secret_key):
         bucket_details = {}
         bucket_details["bucket_name"] = bucket["Name"]
         bucket_acl = s3_client.get_bucket_acl(Bucket=bucket["Name"])
-        public_access_block = s3_client.get_public_access_block(Bucket=bucket["Name"])
-        bucket_details["bucket_acl"] = bucket_acl["Grants"]
-        bucket_details["bucket_owner"] = bucket_acl["Owner"]["DisplayName"]
+        bucket_details["bucket_acl"] = bucket_acl.get("Grants", {})
+        bucket_details["bucket_owner"] = bucket_acl["Owner"].get("DisplayName", "No DisplayName for owner")
         bucket_details["creation_date"] = bucket["CreationDate"].strftime("%Y-%m-%d %H:%M")
 
         # Check if there is a grant allowing public read access
@@ -47,12 +46,20 @@ def categorize_buckets(access_key, secret_key):
             bucket_details["bucket_policy"] = None
 
         # Check the bucket's Public Access Block settings
-        if all(public_access_block["PublicAccessBlockConfiguration"].values()):
+        try:
+            public_access_block = s3_client.get_public_access_block(Bucket=bucket["Name"])
+
+            if all(public_access_block["PublicAccessBlockConfiguration"].values()):
+                private_buckets.append(bucket_details)
+                private_buckets_count += 1
+            else:
+                public_buckets.append(bucket_details)
+                publice_buckets_count += 1
+        except s3_client.exceptions.from_code("NoSuchBucketPolicy"):
+            # We can't access public bucket public access configuration, and we will consider it private
+            print(f"Error checking {bucket['Name']} public access configuration!")
             private_buckets.append(bucket_details)
             private_buckets_count += 1
-        else:
-            public_buckets.append(bucket_details)
-            publice_buckets_count += 1
 
     return {
         "private_buckets": private_buckets,
