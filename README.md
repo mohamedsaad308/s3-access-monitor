@@ -76,15 +76,3 @@ To use the application, start by logging in with your AWS credentials. This logi
 
 - Flask
 - ReactJS
-
-## Notes
-
-I'm still trying to fully understand the business case, so I've had to make some assumptions. Getting permissions can be a complex process, and to make informed decisions, I need to know how permissions are managed within our S3 service.
-
-Currently, I have to retrieve all objects to check their permissions, which could be very time-consuming if we have a large number of objects in our buckets, potentially even millions.
-
-From what I understand, there doesn't appear to be a direct way to retrieve only permissions without fetching all the files. Even if I tried to use paginated list object calls, it wouldn't provide a comprehensive overview of all object permissions at once.
-
-If it's feasible, I would recommend implementing a database to store information about objects and buckets along with their permissions. This database could be periodically updated by a cron job every couple of hours, depending on our business needs, and it could be synchronized with any changes that occur.
-
-With this approach, the S3 Dashboard would communicate with the database instead of directly querying the S3 API, which could improve efficiency and make it easier to manage permissions."
